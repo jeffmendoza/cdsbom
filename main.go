@@ -22,11 +22,11 @@ import (
 )
 
 func main() {
-	inFile, outFile := flags()
+	inFile, outFile, minScore := flags()
 
 	document, format := read(inFile)
 
-	if err := enhance.Do(context.Background(), document); err != nil {
+	if err := enhance.Do(context.Background(), document, minScore); err != nil {
 		fmt.Printf("Error enhancing sbom: %v\n", err)
 		os.Exit(1)
 	}
@@ -36,9 +36,10 @@ func main() {
 }
 
 // flags sets up and parses flags. Return values are input file and output file
-// respecively.
-func flags() (string, string) {
+// respectively.
+func flags() (string, string, int) {
 	o := flag.String("out", "", "Name of output file, default is <infile>-new.json")
+	s := flag.Int("min-score", 0, "The minimum effective cd score for license confidence (0-100). Default is 0.")
 
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
@@ -66,7 +67,7 @@ func flags() (string, string) {
 		}
 	}
 
-	return i, *o
+	return i, *o, *s
 }
 
 // read reads in the sbom document and also returns the format.

@@ -19,14 +19,13 @@ Make sure `$GOBIN` is in your path.
 
 Example:
 ```sh
-cdsbom -out enhanced-sbom.json input-sbom.json
+cdsbom -min-score 50 -out enhanced-sbom.json input-sbom.json
 ```
 
 This will read `input-sbom.json` and query ClearlyDefined for License
 information. The License fields in the SBOM will be replaced to use the license
-data returned from ClearlyDefined. A new sbom will be written to
-`enhanced-sbom.json` with the updated fields in the same format as the input
-sbom.
+data returned from ClearlyDefined (with the Clearly Defined effective score greater than or equal to the **min-score**).
+A new sbom will be written to `enhanced-sbom.json` with the updated fields in the same format as the input sbom.
 
 Supported formats are the [same as
 Protobom](https://github.com/protobom/protobom/blob/main/README.md#supported-versions-and-formats).

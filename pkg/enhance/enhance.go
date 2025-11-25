@@ -45,13 +45,13 @@ func init() {
 // provided protobom Document with results from ClearlyDefined Warnings and
 // updates are printed to stdout. TODO: Update to use a provided io.Writer or
 // logger, also to use provided http client/transport and context.
-func Do(ctx context.Context, s *sbom.Document) error {
+func Do(ctx context.Context, s *sbom.Document, minScore int) error {
 	coords := CoordList(s)
 	defs, err := getDefs(ctx, coords)
 	if err != nil {
 		return err
 	}
-	updateLicenses(s, defs)
+	updateLicenses(s, defs, minScore)
 	return nil
 }
 
@@ -121,13 +121,13 @@ func getDefsFromService(ctx context.Context, coords []string) (map[string]*cd.De
 	return defs, nil
 }
 
-func updateLicenses(s *sbom.Document, defs map[string]*cd.Definition) {
+func updateLicenses(s *sbom.Document, defs map[string]*cd.Definition, minScore int) {
 	for _, node := range s.GetNodeList().GetNodes() {
-		updateNode(node, defs)
+		updateNode(node, defs, minScore)
 	}
 }
 
-func updateNode(n *sbom.Node, defs map[string]*cd.Definition) {
+func updateNode(n *sbom.Node, defs map[string]*cd.Definition, minScore int) {
 	p := n.GetIdentifiers()[int32(sbom.SoftwareIdentifierType_PURL)]
 	if p == "" {
 		return
@@ -145,7 +145,7 @@ func updateNode(n *sbom.Node, defs map[string]*cd.Definition) {
 	}
 	old := strings.Join(n.GetLicenses(), " AND ")
 	new := d.Licensed.Declared
-	if old != new {
+	if old != new && d.Scores.Effective >= minScore {
 		fmt.Printf("Update Declared License\n")
 		fmt.Printf("Name: %v\tVersion: %v\n", n.GetName(), n.GetVersion())
 		fmt.Printf("\t\t\t\tSBOM License: %q\tCD License: %q\n", old, new)
@@ -154,7 +154,7 @@ func updateNode(n *sbom.Node, defs map[string]*cd.Definition) {
 
 	oldDisc := n.GetLicenseConcluded()
 	newDisc := strings.Join(d.Licensed.Facets.Core.Discovered.Expressions, " AND ")
-	if oldDisc != newDisc {
+	if oldDisc != newDisc && d.Scores.Effective >= minScore {
 		fmt.Printf("Update Discovered License\n")
 		fmt.Printf("Name: %v\tVersion: %v\n", n.GetName(), n.GetVersion())
 		fmt.Printf("\t\t\t\tSBOM License: %q\tCD License: %q\n", oldDisc, newDisc)
